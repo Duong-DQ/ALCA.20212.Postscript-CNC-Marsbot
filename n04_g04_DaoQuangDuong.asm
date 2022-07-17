@@ -28,47 +28,42 @@
 	
 .text  
 main:
-	li $t6, 0xFFFF0010
-	li $t7, IN_ADRESS_HEXA_KEYBOARD
- 	li $t8, OUT_ADRESS_HEXA_KEYBOARD						 
+	li 		$t7, IN_ADRESS_HEXA_KEYBOARD
+ 	li 		$t8, OUT_ADRESS_HEXA_KEYBOARD						 
 polling: 
+	move 	$t2, $t1
 	move 	$t1, $zero
 	li 		$t0, 0x01 								# check row 1 with key 0, 1, 2, 3
 	sb 		$t0, 0($t7) 							# must reassign expected row
  	lb 		$t0, 0($t8) 							# read scan code of key button
- 	or 		$t1, $t1, $t0
+	or 		$t1, $t1, $t0
  	
  	li 		$t0, 0x02 								# check row 2 with key 4, 5, 6, 7
 	sb 		$t0, 0($t7) 							# must reassign expected row
  	lb 		$t0, 0($t8) 							# read scan code of key button
- 	or 		$t1, $t1, $t0
+ 	or  	$t1, $t1, $t0
  	
  	li 		$t0, 0x04 								# check row 3 with key 8, 9, A, B
 	sb 		$t0, 0($t7) 							# must reassign expected row
  	lb 		$t0, 0($t8) 							# read scan code of key button
-	or 		$t1, $t1, $t0
- 	
-	li 		$t0, 0x08 								# check row 4 with key C, D, E, F
-	sb 		$t0, 0($t7) 							# must reassign expected row
- 	lb 		$t0, 0($t8) 							# read scan code of key button
- 	or 		$t1, $t1, $t0
+	or	 	$t1, $t1, $t0
  	
  	beqz 	$t1, back_to_polling
- 	
+ 	sub		$t2, $t2, $t1
+ 	beqz	$t2, back_to_polling
  	
 	process: 
-		sb 		$t1, 0($t8)
 		li 		$v0, 34 							# print integer (hexa)
-		move    $a0 $t1
+		move    $a0, $t1
  		syscall
 	sleep: 
 		li 		$a0, 100 							# sleep 100ms
  		li 		$v0, 32
 		syscall 
 back_to_polling: 
-	j 	polling 								# continue polling
+	j 	polling 									# continue polling
 
-
+#################################################################################
 
 	la 		$t0, postscript8
 	lw 		$t1, size8
