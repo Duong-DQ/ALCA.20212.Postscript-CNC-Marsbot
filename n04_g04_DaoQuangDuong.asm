@@ -13,131 +13,88 @@
 .eqv  LEAVETRACK 0xffff8020    	# Boolean (0 or non-0): whether or not to leave a track
 
 .data
-	#postscript [{goc, tg, cat/k cat}, {},...]
-	postscript0:	.word	135,400,0, 225,141,1, 90,300,1, 315,141,1, 270,80,1, 0,200,0
-	postscript4:	.word	90,4000,0, 180,4000,0, 120,4000,1, 150,4000,1, 180,4000,1, 210,4000,1, 240,4000,1, 0,13500,1
-	postscript8:	.word	120,4000,0, 180,4000,0, 120,4000,1, 150,4000,1, 180,4000,1, 210,4000,1, 240,4000,1, 0,13500,1
-	size0: 6
-	size4: 8
-	size8: 8
+	#postscript [{goc, tg, cat/k cat}, {},...], -1 = end
+	postscript0:	.word	135,2000,0, 180,12000,1, 60,3000,1, 30,3000,1, 0,3000,1, 330,3000,1, 300,3000,1, 90,10000,0, 250,3000,1 200,3000,1, 180,3500,1, 160,3000,1, 110,3000,1, 90,6000,0, 270,4000,1, 0,12000,1, 90,4000,1, 180,6000,0, 270,4000,1, 90,10000,0,-1 
+	postscript4:	.word	120,3500,0, 180,12000,1, 270,2000,0, 90,4000,1, 0,12000,0, 270,4000,1, 90,10000,0, 250,3000,1 200,3000,1, 180,3500,1, 160,3000,1, 110,3000,1, 90,4000,0, 0,12000,1, 270,2000,0, 90,4000,1, 90,2000,0,-1
+	postscript8:	.word	90,6000,0, 180,6000,0, 210,3000,1, 270,3000,1, 150,3000,1, 210,3000,1, 90,3000,1, 150,3000,1, 30,3000,1, 90,3000,1, 330,3000,1, 30,3000,1, 270,3000,1, 330,3000,1, 90,2000,0,-1
+	str1:  .asciiz ","
+	str2:  .asciiz " - "
 	
-.text  
-main:
+.text
+Key_READ:
 	li 		$t7, IN_ADRESS_HEXA_KEYBOARD
- 	li 		$t8, OUT_ADRESS_HEXA_KEYBOARD						 
-polling: 
-	move 	$t2, $t1
-	move 	$t1, $zero
-	li 		$t0, 0x01 								# check row 1 with key 0, 1, 2, 3
-	sb 		$t0, 0($t7) 							# must reassign expected row
- 	lb 		$t0, 0($t8) 							# read scan code of key button
-	or 		$t1, $t1, $t0
- 	
- 	li 		$t0, 0x02 								# check row 2 with key 4, 5, 6, 7
-	sb 		$t0, 0($t7) 							# must reassign expected row
- 	lb 		$t0, 0($t8) 							# read scan code of key button
- 	or  	$t1, $t1, $t0
- 	
- 	li 		$t0, 0x04 								# check row 3 with key 8, 9, A, B
-	sb 		$t0, 0($t7) 							# must reassign expected row
- 	lb 		$t0, 0($t8) 							# read scan code of key button
-	or	 	$t1, $t1, $t0
- 	
- 	beqz 	$t1, back_to_polling
- 	sub		$t2, $t2, $t1
- 	beqz	$t2, back_to_polling
- 	
-	process: 	
- 		beq		$t1, 17, key0_pressed			
- 		beq		$t1, 18, key4_pressed
- 		beq		$t1, 20, key8_pressed
-back_to_polling: 
-	j 		polling 								# continue polling
+ 	li 		$t8, OUT_ADRESS_HEXA_KEYBOARD
+ 	move	$t5, $zero							 
+	polling:
+		move	$t4, $t5								# previously pressed key
+		move 	$t5, $zero				
+		
+		li 		$t6, 0x01 								# check row 1 with key 0, 1, 2, 3
+		sb 		$t6, 0($t7) 							# must reassign expected row
+ 		lb 		$t6, 0($t8) 							# read scan code of key button
+		or 		$t5, $t5, $t6
+ 		
+ 		li 		$t6, 0x02 								# check row 1 with key 4, 5, 6, 7
+		sb 		$t6, 0($t7) 							# must reassign expected row
+ 		lb 		$t6, 0($t8) 							# read scan code of key button
+		or 		$t5, $t5, $t6
+		
+		li 		$t6, 0x04 								# check row 1 with key 8, 9, A, B
+		sb 		$t6, 0($t7) 							# must reassign expected row
+ 		lb 		$t6, 0($t8) 							# read scan code of key button
+		or 		$t5, $t5, $t6
+ 		
+ 		sub		$t4, $t4, $t5
+ 		beqz	$t4, back_to_polling
+ 		beq		$t5, 0x11, key0_pressed
+ 		beq		$t5, 0x12, key4_pressed
+ 		beq		$t5, 0x14, key8_pressed
+	back_to_polling: 
+		li    $a0, 100
+		addi	$v0, $zero, 32        
+		syscall	
+		j 		polling 								# continue polling
+
+	#-------------------set_postscript--------------------------
+	key0_pressed:												
+		la 		$t0, postscript0																				
+		j		Marbot_DRAW									
+	key4_pressed:												
+		la 		$t0, postscript4									
+		j		Marbot_DRAW									
+	key8_pressed:												
+		la 		$t0, postscript8							
+		j		Marbot_DRAW									
+# END_KEY_READING:
 
 
-#-------------------set_postscript--------------------------#
-key0_pressed:												#
-	la 		$t0, postscript0								#
-	lw 		$t1, size0										#
-	li 		$t2, 0			#i=0							#
-	j		read_postscript									#
-key4_pressed:												#
-	la 		$t0, postscript4								#
-	lw 		$t1, size4										#
-	li 		$t2, 0			#i=0							#
-	j		read_postscript									#
-key8_pressed:												#
-	la 		$t0, postscript8								#
-	lw 		$t1, size8										#
-	li 		$t2, 0			#i=0							#
-	j		read_postscript									#
-#-----------------------------------------------------------#
-read_postscript:	
-	beq		$t2, $t1, end
-	lw		$s0, ($t0)		# $s0: goc chuyen dong
-	addi	$t0, $t0, 4
-	lw		$s1, ($t0)		# $s1: thoi gian
-	addi	$t0, $t0 4
-	lw		$s2, ($t0)		# $s2: cat/khong cat
-	addi	$t0, $t0, 4
+Marsbot_DRAW:
+	read_postscript:	
+		lw		$s0, ($t0)		# $s0: goc chuyen dong
+		beq		$s0, -1, end_read_postscript
+		addi	$t0, $t0, 4
+		lw		$s1, ($t0)		# $s1: thoi gian
+		addi	$t0, $t0, 4
+		lw		$s2, ($t0)		# $s2: cat/khong cat
+		addi	$t0, $t0, 4
 	
-	li $v0, 1
-    move $a0, $s0
-    syscall
-    li $v0, 1
-    move $a0, $s1
-    syscall
-    li $v0, 1
-    move $a0, $s2
-    syscall
-    
-	move	$a0, $s0
-	jal		ROTATE
-	
-	bnez	$s2, is_track
-	jal		UNTRACK
-	j		not_track
-	is_track: 	jal		TRACK
-	not_track:
-	jal		GO
-	nop
-	
-	move    $a0, $s1
-	jal		SLEEP
-	
-	nop
-	jal     UNTRACK         	# keep old track
-	nop
-	jal     TRACK           	# and draw new track line
-	
-	
-	addi 	$t2, $t2, 1		# i++
-	j read_postscript
-            
-end_main:
-	
-	
-#-----------------------------------------------------------
-# STEP procedure, to start running
-# param[in]    	$s0 : goc chuyen dong
-#				$s1 : thoi gian
-#				$s2 : cat/khong cat
-#-----------------------------------------------------------
-STEP: 
-
-
-	
-	
-#-----------------------------------------------------------
-# SLEEP procedure, to start running
-# param[in]    $a0 : time (mili-second)
-#-----------------------------------------------------------
-SLEEP: 
-	addi	$v0, $zero, 32        
-	syscall	
-	nop       
-	jr    	$ra
-	nop
+		jal		__console_print
+		
+		
+		move	$a0, $s0
+		jal		ROTATE
+		
+		beqz	$s2, not_track
+		jal		TRACK
+		not_track:
+		jal		GO
+		move    $a0, $s1
+		addi	$v0, $zero, 32        
+		syscall	
+		jal		STOP
+		jal		UNTRACK
+		addi 	$t2, $t2, 1			# i++
+		j read_postscript
 	
 #-----------------------------------------------------------
 # GO procedure, to start running
@@ -199,7 +156,29 @@ ROTATE:
 	nop
 	jr    	$ra
 	nop
-end: 
+
+__console_print:			# print s0, s1, s2
+	la 		$a0, str2
+    li 		$v0, 4
+    syscall
+	li 		$v0, 1
+    move 	$a0, $s0
+    syscall
+    la 		$a0, str1
+    li 		$v0, 4
+    syscall
+    li 		$v0, 1
+    move 	$a0, $s1
+    syscall
+    la 		$a0, str1
+    li 		$v0, 4
+    syscall
+    li 		$v0, 1
+    move 	$a0, $s2
+    syscall
+    jr    	$ra
+
+end_read_postscript: 
 	jal STOP
 	j	back_to_polling
 	nop
